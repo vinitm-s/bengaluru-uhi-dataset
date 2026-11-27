@@ -20,3 +20,19 @@ Google Earth Engine (GEE) JavaScript pipeline used to acquire and export the co-
 ## Usage
 
 Open [Google Earth Engine Code Editor](https://code.earthengine.google.com/), paste the contents of `gee_export_bengaluru_2024.js`, click **Run**, and trigger both GeoTIFF export tasks in the **Tasks** tab to save the rasters to Google Drive.
+
+## Modeling & Benchmark Summary
+
+To prevent spatial autocorrelation leakage, the co-registered `1,336 × 1,363` rasters were partitioned along strict horizontal latitude rows into spatially disjoint northern training (`198` patches), central validation (`18` patches), and southern testing (`18` patches) subsets (`256 × 256` pixels, stride `64`), with Min-Max normalization bounds computed strictly on the training partition.
+
+All neural models were trained in PyTorch for `40` epochs across three random seeds (`42`, `123`, and `999`) using minimum-validation-loss checkpointing:
+
+| Model | Parameters | Normalized RMSE | Physical MAE (°C) | R² Score | Key Takeaway |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| **Training-Mean Baseline** | 0 | `0.10531` | `2.61°C` | `-0.46553` | Static pixel-wise training average |
+| **Compact 4-Layer Sequential CNN** | 150,017 | `0.05767 ± 0.00212` | `1.36°C ± 0.05°C` | `0.56008 ± 0.03245` | Highest overall R² and lowest temperature error |
+| **Lightweight U-Net** | 488,001 | `0.06234 ± 0.00056` | `1.49°C ± 0.01°C` | `0.48662 ± 0.00895` | `0.779 ms/patch` inference; ~4× lower cross-seed variance and sharper urban boundaries |
+
+## Code Availability
+
+The full PyTorch model architectures, training loops, and evaluation pipelines are maintained in a private repository while the accompanying manuscript is under peer review. Happy to walk through the complete codebase and experimental setup during technical interviews.
